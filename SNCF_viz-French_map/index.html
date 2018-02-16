@@ -57,7 +57,7 @@
 		else {return "blue"; };
 	}
 	
-	d3.json("regions.geojson", function(json) {
+	d3.json("cleaned_datasets/regions.geojson", function(json) {
 		d3.csv("cleaned_datasets/all-joined-datasets.csv", function(data) {
 			
 			radiusScale.domain(data.map(function(d) {return +d.voyageurs_2016; }));
