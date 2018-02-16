@@ -7,7 +7,7 @@
   <style>
     body {margin: 0; position: fixed; top: 0; right: 0; bottom: 0; left: 0; font-family: Arial}
 	p {margin: 0; padding: 0}
-	.choiceZone {display: inline-block; margin-top: 2px; margin-bottom: 2px;}
+	.choiceZone {display: inline-block; margin: 2px;}
 	.hidden {display: none;}
 	div.tooltip {color: #222; background-color: #fff; padding: .5em; text-shadow: #f5f5f5 0 1px 0; border-radius: 2px; opacity: 0.9; position: absolute;}
   </style>
@@ -29,7 +29,7 @@
         .attr('class', 'hidden tooltip');
     
     var projection = d3.geoConicConformal().center([2.454071, 46.279229]).scale(2800)
-		.translate([width/2, height/2]);
+		.translate([width/2.3, height/1.8]);
 
     var path = d3.geoPath()
     	.projection(projection);
@@ -57,6 +57,26 @@
 		else {return "blue"; };
 	}
 	
+	function getCode(list, name) {
+		return list.find(function(d) {if (d.name == name) {return d; }}).code;
+	};
+	
+	function getName(list, code) {
+		return list.find(function(d) {if (d.code == code) {return d; }}).name;
+	};
+	
+	function transitionStrokeWidth(object) {
+		object
+			.transition().duration(400).style("stroke-width", 10)
+			.transition().style("stroke-width", 1);
+	}
+	
+	function transitionBorderWidth(object) {
+		object
+			.transition().duration(400).style("border-width", "6px")
+			.transition().style("border-width", "1px");
+	}
+	
 	d3.json("cleaned_datasets/regions.geojson", function(json) {
 		d3.csv("cleaned_datasets/all-joined-datasets.csv", function(data) {
 			
@@ -64,6 +84,9 @@
 			
 			var minVariation = d3.min(data, function(d) {return (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015; });
 			var maxVariation = d3.max(data, function(d) {return (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015; });
+			
+			console.log("Maximum voyagaurs: "+d3.min(data, function(d) {return +d.voyageurs_2016; }));
+			console.log("Minimum voyagaurs: "+d3.max(data, function(d) {return +d.voyageurs_2016; }));
 			
 			colorScale.domain([minVariation,maxVariation]);
 		
@@ -73,7 +96,7 @@
 				.append("path")
 				.attr("d", path)
 				.attr("fill","#f5f5f5")
-				.attr("stroke","black");
+				.attr("stroke","grey");
 			
 			var gares = svg.append("g").attr("class","gares");
 			var nodes = [];
@@ -81,6 +104,7 @@
 			data.forEach(function (d) {
 				var proj = projection([d.Longitude_WGS84,d.Latitude_WGS84]);
 				nodes.push({
+					code: d.Code_UIC,
 					radius: radiusScale(+d.voyageurs_2016),
 					color: color((+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015),
 					cx: proj[0],
@@ -93,14 +117,22 @@
 			
 			nodes.sort(function(a,b) {return (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0); }); 
 			
-			var firstChoiceZone = d3.select("body").append("div").attr("class","choiceZone").attr("style","border: 2px solid blue;");
+			var firstChoiceZone = d3.select("body")
+				.append("div")
+				.attr("class","choiceZone")
+				.attr("id","firstChoiceZone")
+				.attr("style","border: 2px solid blue;");
 			
 			firstChoiceZone.append("p").attr("class","choiceZone").text("Première gare sélectionnée : ");
 			
 			var firstDropdown = firstChoiceZone.append("select")
 				.attr("class","choiceZone")
-				.on("change",function() {
-					firstStationSelected = d3.select(this).property("value");
+				.attr("style","font-weight: bold;")
+				.on("change",function(d) {
+					var nameSelected = d3.select(this).property("value");
+					firstStationSelected = getCode(nodes, nameSelected);
+					transitionStrokeWidth(d3.select("#_"+firstStationSelected));
+					transitionBorderWidth(d3.select("#firstChoiceZone"));
 				});
 
 			var firstOptions = firstDropdown
@@ -109,14 +141,22 @@
 				.append("option")
 				.text(function(d) {return d.name; });
 				
-			var secondChoiceZone = d3.select("body").append("div").attr("class","choiceZone").attr("style","border: 2px solid yellow");
+			var secondChoiceZone = d3.select("body")
+				.append("div")
+				.attr("class","choiceZone")
+				.attr("id","secondChoiceZone")
+				.attr("style","border: 2px solid yellow");
 			
 			secondChoiceZone.append("p").attr("class","choiceZone").text("Deuxième gare sélectionnée : ");
 			
 			var secondDropdown = secondChoiceZone.append("select")
 				.attr("class","choiceZone")
+				.attr("style","font-weight: bold;")
 				.on("change",function() {
-					secondStationSelected = d3.select(this).property("value");
+					var nameSelected = d3.select(this).property("value");
+					secondStationSelected = getCode(nodes, nameSelected);
+					transitionStrokeWidth(d3.select("#_"+secondStationSelected));
+					transitionBorderWidth(d3.select("#secondChoiceZone"));
 				});
 
 			var secondOptions = secondDropdown
@@ -126,6 +166,7 @@
 				.text(function(d) {return d.name; });
 			
 			var simulation = d3.forceSimulation(nodes)
+				//.force("center", d3.forceCenter(projection([2.454071, 46.279229])))
 				.force("x", d3.forceX(function(d) {return d.cx; }).strength(0.55))
 				.force("y", d3.forceY(function(d) {return d.cy; }).strength(0.55))
 				.force("collide", d3.forceCollide().radius(function(d) { return d.radius + 0.3; }))
@@ -136,6 +177,7 @@
 
 				gare.enter()
 					.append("circle")
+					.attr("id", function(d) {return "_"+d.code; })
 					.attr("r", function(d) {return d.radius; })
 					.style("stroke","grey")
 					.style("fill", function(d) {return d.color; })
@@ -153,22 +195,62 @@
 						tooltip.classed('hidden', true);
 					})
 					.on("click", function(d){
-						d3.select(this)
-							.transition().duration(100).style("stroke-width", 10)
-							.transition().style("stroke-width", 1);
+						transitionStrokeWidth(d3.select(this));
 						if (firstStationSelected) {
-							secondStationSelected = d.name;
-							secondDropdown.property("value", secondStationSelected)
+							secondStationSelected = d.code;
+							var secondStationName = getName(nodes, secondStationSelected);
+							secondDropdown.property("value", secondStationName);
+							transitionBorderWidth(d3.select("#secondChoiceZone"));
 						}
 						else {
-							firstStationSelected = d.name;
-							firstDropdown.property("value", firstStationSelected);
+							firstStationSelected = d.code;
+							var firstStationName = getName(nodes, firstStationSelected);
+							firstDropdown.property("value", firstStationName);
+							transitionBorderWidth(d3.select("#firstChoiceZone"));
 						}
 					})
 					.merge(gare)
 					.attr("cx", function(d) {return d.x; })
 					.attr("cy", function(d) {return d.y; });
-			}
+			};
+			var legend = svg.append("g")
+				.attr("class","legend")
+				.attr("transform", function(d) {return "translate(" + (width -150) + "," + 30 + ")"; 
+				});
+			
+			var legendRadius = legend.append("g").attr("id","radius")
+			
+			legendRadius.append("text").attr("style","font-size: 0.8em; font-weight: bold;").text("Voyageurs en 2016 :");
+			
+			var eachRadius = legendRadius.selectAll("g")
+				.data(radiusScale.range().reverse())
+				.enter()
+				.append("g")
+				.attr("id",function(d) {return "_"+d})
+				.attr("transform", function(d,i) {return "translate(" + 20 + "," + (20+i*20) +")"; });
+			
+			eachRadius.append("circle")
+				.style("fill", "none")
+				.style("stroke", "black")
+				.attr("cx", 0)
+				.attr("cy", 0)
+				.attr("r", function(d) {return d; });
+			
+			var radiusIntervals = [0];
+			var numberOfIntervals = radiusScale.range().length;
+			var domainLength = radiusScale.domain().length;
+			var domainReverse = radiusScale.domain().reverse();
+			for (i=0; i<domainLength; i++){
+			// euh au lieu de faire ça ==> fonction quantile sur javascript ou d3 ?
+			};
+			
+			
+			/*
+			eachRadius.append("text")
+				.attr("transform", function(d,i) {return "translate(" + 20 + ",3)"; })
+				.attr("style","font-size: 0.7em;")
+				.text(function(d,i) {return radiusScale.domain().reverse()[i-1] radiusScale.domain().reverse()[i]; } );
+			*/
 		});
 	});
   </script>
