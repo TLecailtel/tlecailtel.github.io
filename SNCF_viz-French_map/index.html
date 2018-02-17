@@ -38,7 +38,7 @@
 		.range([0,1]);
 		
 	var radiusScale = d3.scaleQuantile()
-		.range([3,4,5,6,7,9]);
+		.range([2,3,4,6,7,9]);
 	
 	function color(variation) {
 		if(variation != 0) {
@@ -65,14 +65,14 @@
 		return list.find(function(d) {if (d.code == code) {return d; }}).name;
 	};
 	
-	function transitionStrokeWidth(object) {
-		object
+	function transitionStrokeWidth(element) {
+		element
 			.transition().duration(400).style("stroke-width", 10)
 			.transition().style("stroke-width", 1);
 	}
 	
-	function transitionBorderWidth(object) {
-		object
+	function transitionBorderWidth(element) {
+		element
 			.transition().duration(400).style("border-width", "6px")
 			.transition().style("border-width", "1px");
 	}
@@ -84,9 +84,6 @@
 			
 			var minVariation = d3.min(data, function(d) {return (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015; });
 			var maxVariation = d3.max(data, function(d) {return (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015; });
-			
-			console.log("Maximum voyagaurs: "+d3.min(data, function(d) {return +d.voyageurs_2016; }));
-			console.log("Minimum voyagaurs: "+d3.max(data, function(d) {return +d.voyageurs_2016; }));
 			
 			colorScale.domain([minVariation,maxVariation]);
 		
@@ -227,30 +224,36 @@
 				.enter()
 				.append("g")
 				.attr("id",function(d) {return "_"+d})
-				.attr("transform", function(d,i) {return "translate(" + 20 + "," + (20+i*20) +")"; });
+				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+i*20) +")"; });
 			
 			eachRadius.append("circle")
-				.style("fill", "none")
+				.style("fill", "white")
 				.style("stroke", "black")
 				.attr("cx", 0)
 				.attr("cy", 0)
 				.attr("r", function(d) {return d; });
 			
-			var radiusIntervals = [0];
+			var quantiles = [];
 			var numberOfIntervals = radiusScale.range().length;
-			var domainLength = radiusScale.domain().length;
-			var domainReverse = radiusScale.domain().reverse();
-			for (i=0; i<domainLength; i++){
-			// euh au lieu de faire ça ==> fonction quantile sur javascript ou d3 ?
+			for (i=0; i<numberOfIntervals+1; i++){
+				quantiles.push(d3.quantile(radiusScale.domain(),i/numberOfIntervals));
 			};
-			
-			
-			/*
+			quantiles.reverse();
+
 			eachRadius.append("text")
-				.attr("transform", function(d,i) {return "translate(" + 20 + ",3)"; })
+				.attr("transform", function(d,i) {return "translate(" + 15 + ",3)"; })
 				.attr("style","font-size: 0.7em;")
-				.text(function(d,i) {return radiusScale.domain().reverse()[i-1] radiusScale.domain().reverse()[i]; } );
-			*/
+				.text(function(d,i) {return "De "+d3.format(".2s")(quantiles[i+1])+" à "+d3.format(".2s")(quantiles[i]); } );
+			
+			eachRadius
+				.on("mouseenter", function(){
+					d3.selectAll("circle[r='"+d3.select(this).attr("id")[1]+"']")
+						.transition().style("stroke-width", 3);
+					})
+				.on("mouseleave", function(){
+					d3.selectAll("circle[r='"+d3.select(this).attr("id")[1]+"']")
+						.transition().style("stroke-width", 1);
+				})
 		});
 	});
   </script>
