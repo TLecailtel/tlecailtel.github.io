@@ -14,7 +14,7 @@
 
 <body>
 	<div class="mapZone"></div>
-  <script>
+	<script>
 	
     var width = 650,
 		height = 520;
@@ -219,10 +219,9 @@
 					
 			var legend = svg.append("g")
 				.attr("class","legend")
-				.attr("transform", function(d) {return "translate(" + (width -150) + "," + 30 + ")"; 
-				});
+				.attr("transform", function(d) {return "translate(" + (width -150) + "," + 30 + ")"; });
 			
-			var legendRadius = legend.append("g").attr("id","radius")
+			var legendRadius = legend.append("g").attr("id","radius");
 			
 			legendRadius.append("text").attr("style","font-size: 0.8em; font-weight: bold;").text("Voyageurs en 2016 :");
 			
@@ -255,7 +254,7 @@
 			eachRadius
 				.on("mouseenter", function(){
 					d3.selectAll("circle[r='"+d3.select(this).attr("id")[1]+"']")
-						.transition().style("stroke-width", 4);
+						.transition().style("stroke-width", 5);
 					})
 				.on("mouseleave", function(){
 					d3.selectAll("circle[r='"+d3.select(this).attr("id")[1]+"']")
@@ -298,7 +297,7 @@
 			eachPosColor
 				.on("mouseenter", function(){
 					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
-						.transition().style("stroke-width", 4);
+						.transition().style("stroke-width", 5);
 					})
 				.on("mouseleave", function(){
 					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
@@ -335,7 +334,7 @@
 			eachNegColor
 				.on("mouseenter", function(){
 					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
-						.transition().style("stroke-width", 4);
+						.transition().style("stroke-width", 5);
 					})
 				.on("mouseleave", function(){
 					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
@@ -343,5 +342,5 @@
 				});
 		});
 	});
-  </script>
+	</script>
 </body>
