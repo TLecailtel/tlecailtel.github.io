@@ -107,8 +107,8 @@
 					code: d.Code_UIC,
 					radius: radiusScale(+d.voyageurs_2016),
 					variation: (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015,
-					cx: proj[0],
-					cy: proj[1],
+					x: proj[0],
+					y: proj[1],
 					name: d.Nom_de_la_gare,
 					county: d.Departement,
 					region: d.Region
@@ -142,7 +142,9 @@
 				.data(nodes).enter()
 				.append("option")
 				.text(function(d) {return d.name; });
-				
+			
+			d3.select("body").append("div");
+			
 			var secondChoiceZone = d3.select("body")
 				.append("div")
 				.attr("class","choiceZone")
@@ -168,53 +170,53 @@
 				.text(function(d) {return d.name; });
 			
 			var simulation = d3.forceSimulation(nodes)
-				//.force("center", d3.forceCenter(projection([2.454071, 46.279229])))
-				.force("x", d3.forceX(function(d) {return d.cx; }).strength(0.55))
-				.force("y", d3.forceY(function(d) {return d.cy; }).strength(0.55))
+				.force("x", d3.forceX(function(d) {return d.x; }).strength(0.55))
+				.force("y", d3.forceY(function(d) {return d.y; }).strength(0.55))
 				.force("collide", d3.forceCollide().radius(function(d) { return d.radius + 0.3; }))
-				.on("tick", ticked);
+				.stop();
 
-			function ticked() {
-				var gare = gares.selectAll("circle").data(nodes);
+			for (i=0; i<100; i++) {simulation.tick(); }
+			
+			var gare = gares.selectAll("circle").data(nodes);
 
-				gare.enter()
-					.append("circle")
-					.attr("id", function(d) {return "_"+d.code; })
-					.attr("r", function(d) {return d.radius; })
-					.style("stroke","black")
-					.attr("fill", function(d) {return color(d.variation); })
-					.on("mousemove", function(d) {
-						var mouse = d3.mouse(svg.node()).map(function(d) {return parseInt(d); });
-						tooltip.classed("hidden", false)
-							.attr("style", "left:" + (mouse[0] + 15) + "px; top:" + (mouse[1] - 35) + "px; border: 2px solid "+colorInteraction())
-							.html("<p><strong>"+d.name+"</strong></p><p> Département : "+d.county+"</p><p> Région : "+d.region+"</p>");
-					})
-					.on("mouseenter", function(){
-						d3.select(this).transition().attr("fill", colorInteraction());
-					})
-					.on("mouseleave", function(){
-						d3.select(this).transition().attr("fill", function(d){return color(d.variation); }).style("stroke-width", 1);
-						tooltip.classed('hidden', true);
-					})
-					.on("click", function(d){
-						transitionStrokeWidth(d3.select(this));
-						if (firstStationSelected) {
-							secondStationSelected = d.code;
-							var secondStationName = getName(nodes, secondStationSelected);
-							secondDropdown.property("value", secondStationName);
-							transitionBorderWidth(d3.select("#secondChoiceZone"));
-						}
-						else {
-							firstStationSelected = d.code;
-							var firstStationName = getName(nodes, firstStationSelected);
-							firstDropdown.property("value", firstStationName);
-							transitionBorderWidth(d3.select("#firstChoiceZone"));
-						}
-					})
-					.merge(gare)
-					.attr("cx", function(d) {return d.x; })
-					.attr("cy", function(d) {return d.y; });
-			};
+			gare.enter()
+				.append("circle")
+				.attr("id", function(d) {return "_"+d.code; })
+				.attr("r", function(d) {return d.radius; })
+				.style("stroke","black")
+				.attr("fill", function(d) {return color(d.variation); })
+				.on("mousemove", function(d) {
+					var mouse = d3.mouse(svg.node()).map(function(d) {return parseInt(d); });
+					tooltip.classed("hidden", false)
+						.attr("style", "left:" + (mouse[0] + 15) + "px; top:" + (mouse[1] - 35) + "px; border: 2px solid "+colorInteraction())
+						.html("<p><strong>"+d.name+"</strong></p><p> Département : "+d.county+"</p><p> Région : "+d.region+"</p>");
+				})
+				.on("mouseenter", function(){
+					d3.select(this).transition().attr("fill", colorInteraction());
+				})
+				.on("mouseleave", function(){
+					d3.select(this).transition().attr("fill", function(d){return color(d.variation); }).style("stroke-width", 1);
+					tooltip.classed('hidden', true);
+				})
+				.on("click", function(d){
+					transitionStrokeWidth(d3.select(this));
+					if (firstStationSelected) {
+						secondStationSelected = d.code;
+						var secondStationName = getName(nodes, secondStationSelected);
+						secondDropdown.property("value", secondStationName);
+						transitionBorderWidth(d3.select("#secondChoiceZone"));
+					}
+					else {
+						firstStationSelected = d.code;
+						var firstStationName = getName(nodes, firstStationSelected);
+						firstDropdown.property("value", firstStationName);
+						transitionBorderWidth(d3.select("#firstChoiceZone"));
+					}
+				})
+				.merge(gare)
+				.attr("cx", function(d) {return d.x; })
+				.attr("cy", function(d) {return d.y; });
+					
 			var legend = svg.append("g")
 				.attr("class","legend")
 				.attr("transform", function(d) {return "translate(" + (width -150) + "," + 30 + ")"; 
@@ -262,7 +264,9 @@
 				
 			var legendColor = legend.append("g").attr("id","color").attr("transform","translate(0,"+20*(numberOfIntervalsRadius+2)+")");
 			
-			legendColor.append("text").attr("style","font-size: 0.8em; font-weight: bold;").text("Variation voyageurs 2016 p/r à 2015");
+			var colorText = legendColor.append("text").attr("style","font-size: 0.8em; font-weight: bold;");
+			colorText.append("tspan").attr("x",0).attr("dy","1em").text("Voyageurs en 2016");
+			colorText.append("tspan").attr("x",0).attr("dy","1.5em").text("par rapport à 2015 :");
 			
 			var eachPosColor = legendColor.selectAll(".positive")
 				.data(posColorScale.range().reverse())
@@ -270,7 +274,7 @@
 				.append("g")
 				.attr("class","positive")
 				.attr("id",function(d) {return d})
-				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+i*20) +")"; });
+				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (50+i*20) +")"; });
 			
 			eachPosColor.append("circle")
 				.style("stroke", "black")
@@ -307,7 +311,7 @@
 				.append("g")
 				.attr("class","negative")
 				.attr("id",function(d) {return d})
-				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+20*numberOfIntervalsPosColor+i*20) +")"; });
+				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (50+20*numberOfIntervalsPosColor+i*20) +")"; });
 			
 			eachNegColor.append("circle")
 				.style("stroke", "black")
