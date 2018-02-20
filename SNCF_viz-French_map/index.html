@@ -3,7 +3,6 @@
   <meta charset="utf-8">
   <title>Variation du nombre de voyageurs dans les gares SNCF</title>
   <script src="node_modules/d3/build/d3.min.js"></script>
-  <script src="node_modules/d3-scale-chromatic/dist/d3-scale-chromatic.min.js"></script>
   <style>
     body {margin: 0; position: fixed; top: 0; right: 0; bottom: 0; left: 0; font-family: Arial}
 	p {margin: 0; padding: 0}
@@ -17,7 +16,7 @@
 	<div class="mapZone"></div>
   <script>
 	
-    var width = 700,
+    var width = 650,
 		height = 520;
 		
 	var svg = d3.select(".mapZone")
@@ -33,21 +32,21 @@
 
     var path = d3.geoPath()
     	.projection(projection);
-
-	var colorScale = d3.scaleLinear()
-		.range([0,1]);
 		
 	var radiusScale = d3.scaleQuantile()
 		.range([2,3,4,6,7,9]);
 	
+	var negColorScale = d3.scaleQuantile()
+		.range(["rgb(255, 0, 0)","rgb(255, 86, 86)","rgb(255, 166, 166)","rgb(255, 224, 224)"]);
+		
+	var posColorScale = d3.scaleQuantile()
+		.range(["rgb(177, 236, 177)","rgb(124, 192, 124)","rgb(68, 162, 68)","rgb(0, 128, 0)"]);
+	
 	function color(variation) {
-		if(variation != 0) {
-			return d3.interpolateRdYlGn(colorScale(variation));
-		}
-		else {
-			return "grey";
-		}
-	}
+		if (variation<0){return negColorScale(variation); }
+		else if (variation>0) {return posColorScale(variation); }
+		else {return "white"; };
+	};
 	
 	var firstStationSelected = null;
 	var secondStationSelected = null;
@@ -81,11 +80,6 @@
 		d3.csv("cleaned_datasets/all-joined-datasets.csv", function(data) {
 			
 			radiusScale.domain(data.map(function(d) {return +d.voyageurs_2016; }));
-			
-			var minVariation = d3.min(data, function(d) {return (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015; });
-			var maxVariation = d3.max(data, function(d) {return (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015; });
-			
-			colorScale.domain([minVariation,maxVariation]);
 		
 			var regions = svg.append("g").attr("class","regions");
 		
@@ -96,14 +90,23 @@
 				.attr("stroke","grey");
 			
 			var gares = svg.append("g").attr("class","gares");
-			var nodes = [];
+			var nodes = [{
+				code: null,
+				radius: null,
+				color: null,
+				cx: null,
+				cy: null,
+				name: "- Aucune gare sélectionnée -",
+				county: null,
+				region: null
+			}];
 			
 			data.forEach(function (d) {
 				var proj = projection([d.Longitude_WGS84,d.Latitude_WGS84]);
 				nodes.push({
 					code: d.Code_UIC,
 					radius: radiusScale(+d.voyageurs_2016),
-					color: color((+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015),
+					variation: (+d.voyageurs_2016 - +d.voyageurs_2015)/+d.voyageurs_2015,
 					cx: proj[0],
 					cy: proj[1],
 					name: d.Nom_de_la_gare,
@@ -113,6 +116,8 @@
 			});
 			
 			nodes.sort(function(a,b) {return (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0); }); 
+			negColorScale.domain(nodes.map(function(d) {if (d.variation<0) {return d.variation; }}));
+			posColorScale.domain(nodes.map(function(d) {if (d.variation>0) {return d.variation; }}));
 			
 			var firstChoiceZone = d3.select("body")
 				.append("div")
@@ -176,8 +181,8 @@
 					.append("circle")
 					.attr("id", function(d) {return "_"+d.code; })
 					.attr("r", function(d) {return d.radius; })
-					.style("stroke","grey")
-					.style("fill", function(d) {return d.color; })
+					.style("stroke","black")
+					.attr("fill", function(d) {return color(d.variation); })
 					.on("mousemove", function(d) {
 						var mouse = d3.mouse(svg.node()).map(function(d) {return parseInt(d); });
 						tooltip.classed("hidden", false)
@@ -185,10 +190,10 @@
 							.html("<p><strong>"+d.name+"</strong></p><p> Département : "+d.county+"</p><p> Région : "+d.region+"</p>");
 					})
 					.on("mouseenter", function(){
-						d3.select(this).transition().style("fill", colorInteraction());
+						d3.select(this).transition().attr("fill", colorInteraction());
 					})
 					.on("mouseleave", function(){
-						d3.select(this).transition().style("fill", function(d){return d.color; }).style("stroke-width", 1);
+						d3.select(this).transition().attr("fill", function(d){return color(d.variation); }).style("stroke-width", 1);
 						tooltip.classed('hidden', true);
 					})
 					.on("click", function(d){
@@ -227,33 +232,111 @@
 				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+i*20) +")"; });
 			
 			eachRadius.append("circle")
-				.style("fill", "white")
+				.attr("fill", "white")
 				.style("stroke", "black")
 				.attr("cx", 0)
 				.attr("cy", 0)
 				.attr("r", function(d) {return d; });
 			
-			var quantiles = [];
-			var numberOfIntervals = radiusScale.range().length;
-			for (i=0; i<numberOfIntervals+1; i++){
-				quantiles.push(d3.quantile(radiusScale.domain(),i/numberOfIntervals));
+			var quantilesRadius = [];
+			var numberOfIntervalsRadius = radiusScale.range().length;
+			for (i=0; i<numberOfIntervalsRadius+1; i++){
+				quantilesRadius.push(d3.quantile(radiusScale.domain(),i/numberOfIntervalsRadius));
 			};
-			quantiles.reverse();
+			quantilesRadius.reverse();
 
 			eachRadius.append("text")
 				.attr("transform", function(d,i) {return "translate(" + 15 + ",3)"; })
 				.attr("style","font-size: 0.7em;")
-				.text(function(d,i) {return "De "+d3.format(".2s")(quantiles[i+1])+" à "+d3.format(".2s")(quantiles[i]); } );
+				.text(function(d,i) {return "De "+d3.format(".2s")(quantilesRadius[i+1])+" à "+d3.format(".2s")(quantilesRadius[i]); } );
 			
 			eachRadius
 				.on("mouseenter", function(){
 					d3.selectAll("circle[r='"+d3.select(this).attr("id")[1]+"']")
-						.transition().style("stroke-width", 3);
+						.transition().style("stroke-width", 4);
 					})
 				.on("mouseleave", function(){
 					d3.selectAll("circle[r='"+d3.select(this).attr("id")[1]+"']")
 						.transition().style("stroke-width", 1);
-				})
+				});
+				
+			var legendColor = legend.append("g").attr("id","color").attr("transform","translate(0,"+20*(numberOfIntervalsRadius+2)+")");
+			
+			legendColor.append("text").attr("style","font-size: 0.8em; font-weight: bold;").text("Variation voyageurs 2016 p/r à 2015");
+			
+			var eachPosColor = legendColor.selectAll(".positive")
+				.data(posColorScale.range().reverse())
+				.enter()
+				.append("g")
+				.attr("class","positive")
+				.attr("id",function(d) {return d})
+				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+i*20) +")"; });
+			
+			eachPosColor.append("circle")
+				.style("stroke", "black")
+				.attr("cx", 0)
+				.attr("cy", 0)
+				.attr("r",9.5)
+				.attr("fill", function(d) {return d});
+			
+			var quantilesPosColor = [];
+			var numberOfIntervalsPosColor = posColorScale.range().length;
+			for (i=0; i<numberOfIntervalsPosColor+1; i++){
+				quantilesPosColor.push(d3.quantile(posColorScale.domain(),i/numberOfIntervalsPosColor));
+			};
+			quantilesPosColor.reverse();
+
+			eachPosColor.append("text")
+				.attr("transform", function(d,i) {return "translate(" + 25 + ",3)"; })
+				.attr("style","font-size: 0.7em;")
+				.text(function(d,i) {return "De +"+d3.format(".0%")(quantilesPosColor[i+1])+" à +"+d3.format(".0%")(quantilesPosColor[i]); } );
+				
+			eachPosColor
+				.on("mouseenter", function(){
+					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
+						.transition().style("stroke-width", 4);
+					})
+				.on("mouseleave", function(){
+					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
+						.transition().style("stroke-width", 1);
+				});
+		
+			var eachNegColor = legendColor.selectAll(".negative")
+				.data(negColorScale.range().reverse())
+				.enter()
+				.append("g")
+				.attr("class","negative")
+				.attr("id",function(d) {return d})
+				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+20*numberOfIntervalsPosColor+i*20) +")"; });
+			
+			eachNegColor.append("circle")
+				.style("stroke", "black")
+				.attr("cx", 0)
+				.attr("cy", 0)
+				.attr("r",9.5)
+				.attr("fill", function(d) {return d});
+			
+			var quantilesNegColor = [];
+			var numberOfIntervalsNegColor = negColorScale.range().length;
+			for (i=0; i<numberOfIntervalsNegColor+1; i++){
+				quantilesNegColor.push(d3.quantile(negColorScale.domain(),i/numberOfIntervalsNegColor));
+			};
+			quantilesNegColor.reverse();
+
+			eachNegColor.append("text")
+				.attr("transform", function(d,i) {return "translate(" + 25 + ",3)"; })
+				.attr("style","font-size: 0.7em;")
+				.text(function(d,i) {return "De "+d3.format(".0%")(quantilesNegColor[i+1])+" à "+d3.format(".0%")(quantilesNegColor[i]); } );
+				
+			eachNegColor
+				.on("mouseenter", function(){
+					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
+						.transition().style("stroke-width", 4);
+					})
+				.on("mouseleave", function(){
+					d3.selectAll("circle[fill='"+d3.select(this).attr("id")+"']")
+						.transition().style("stroke-width", 1);
+				});
 		});
 	});
   </script>
