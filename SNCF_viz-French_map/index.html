@@ -52,7 +52,7 @@
 	var secondStationSelected = null;
 	
 	function colorInteraction() {
-		if (firstStationSelected) {return "yellow"; }
+		if (firstStationSelected) {return "darkorange"; }
 		else {return "blue"; };
 	}
 	
@@ -86,8 +86,8 @@
 			var fond = regions.selectAll("g").data(json.features).enter().append("g").attr("class","region").attr("id",function(d) {return d.properties.nom; })
 				.append("path")
 				.attr("d", path)
-				.attr("fill","#f5f5f5")
-				.attr("stroke","grey");
+				.attr("fill","#FFFBBF")
+				.attr("stroke","#FFBC3F");
 			
 			var gares = svg.append("g").attr("class","gares");
 			var nodes = [{
@@ -125,7 +125,7 @@
 				.attr("id","firstChoiceZone")
 				.attr("style","border: 2px solid blue;");
 			
-			firstChoiceZone.append("p").attr("class","choiceZone").text("Première gare sélectionnée : ");
+			firstChoiceZone.append("p").attr("class","choiceZone").text("1e gare sélectionnée : ");
 			
 			var firstDropdown = firstChoiceZone.append("select")
 				.attr("class","choiceZone")
@@ -149,9 +149,9 @@
 				.append("div")
 				.attr("class","choiceZone")
 				.attr("id","secondChoiceZone")
-				.attr("style","border: 2px solid yellow");
+				.attr("style","border: 2px solid darkorange");
 			
-			secondChoiceZone.append("p").attr("class","choiceZone").text("Deuxième gare sélectionnée : ");
+			secondChoiceZone.append("p").attr("class","choiceZone").text("2e gare sélectionnée : ");
 			
 			var secondDropdown = secondChoiceZone.append("select")
 				.attr("class","choiceZone")
@@ -196,7 +196,7 @@
 				})
 				.on("mouseleave", function(){
 					d3.select(this).transition().attr("fill", function(d){return color(d.variation); }).style("stroke-width", 1);
-					tooltip.classed('hidden', true);
+					tooltip.classed("hidden", true);
 				})
 				.on("click", function(d){
 					transitionStrokeWidth(d3.select(this));
