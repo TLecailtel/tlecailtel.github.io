@@ -1,5 +1,5 @@
 function CreateGlyph(data, firstStationSelected ,secondStationSelected) {
-	
+
 	function dataPoint(d,stationSelected){
 		return [{
 					uic : gare1,
@@ -38,27 +38,27 @@ function CreateGlyph(data, firstStationSelected ,secondStationSelected) {
 		dataset = [{}],
 		data1 = [{}],
 		data2 = [{}];
-	
+
     if (gare2 !== null && gare1 !== null) { // if both stations are selected
 		data.forEach(function(d){
 			if (d.Code_UIC == gare1){data1=dataPoint(d,gare1); };
 			if (d.Code_UIC == gare2){data2=dataPoint(d,gare2); };
 			dataset = data1.concat(data2);
         });
-		let svg_radar1 = RadarChart(".radarChart", dataset, radarChartOptions(["blue","darkorange"]));
+		let svg_radar1 = RadarChart("#radarChart", dataset, radarChartOptions(["blue","darkorange"]));
 	};
 	
 	if (gare2 == null && gare1 !== null) { //if only the first station is selected
 		data.forEach(function(d){
 			if (d.Code_UIC == gare1){dataset=dataPoint(d,gare1); };
 		});
-		let svg_radar1 = RadarChart(".radarChart", dataset, radarChartOptions(["blue"]));
+		let svg_radar1 = RadarChart("#radarChart", dataset, radarChartOptions(["blue"]));
 	};
 	
 	if (gare1 == null && gare2 !== null) { //if only the second station is selected
 		data.forEach(function(d){
 			if (d.Code_UIC == gare2){dataset = dataPoint(d,gare2); };
 		});
-		let svg_radar1 = RadarChart(".radarChart", dataset, radarChartOptions(["darkorange"]));
+		let svg_radar1 = RadarChart("#radarChart", dataset, radarChartOptions(["darkorange"]));
 	};
 };
