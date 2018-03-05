@@ -260,8 +260,16 @@ const RadarChart = function RadarChart(parent_selector, data, options) {
                 .attr('x', this.cx.baseVal.value - 13)
                 .attr('y', this.cy.baseVal.value - 13)
                 .transition()
-                .style('display', 'block')
-                .text(Format(d.value) + cfg.unit);
+                .style('display', 'block');
+            if(d.value == 0){
+            tooltip.text("Missing value")
+          }
+            if (d.value !== 0){
+           tooltip.text(Format(d.value) + cfg.unit);
+        }})
+        .on("mouseout", function(){
+            tooltip.transition()
+                .style('display', 'none').text('');
         })
         .on("mouseout", function(){
             tooltip.transition()
@@ -280,7 +288,7 @@ const RadarChart = function RadarChart(parent_selector, data, options) {
 
     if (cfg.legend !== false && typeof cfg.legend === "object") {
         let legendZone = svg.append('g');
-        let names = data.map(el => el.name);
+        let scores = data.map(el => Format(el.score));
         if (cfg.legend.title) {
             let title = legendZone.append("text")
                 .attr("class", "title")
@@ -298,7 +306,7 @@ const RadarChart = function RadarChart(parent_selector, data, options) {
             .attr('transform', `translate(${cfg.legend.translateX},${cfg.legend.translateY + 20})`);
         // Create rectangles markers
         legend.selectAll('rect')
-          .data(names)
+          .data(scores)
           .enter()
           .append("rect")
           .attr("x", cfg.w - 65)
@@ -308,7 +316,7 @@ const RadarChart = function RadarChart(parent_selector, data, options) {
           .style("fill", (d,i) => cfg.color(i));
         // Create labels
         legend.selectAll('text')
-          .data(names)
+          .data(scores)
           .enter()
           .append("text")
           .attr("x", cfg.w - 52)
