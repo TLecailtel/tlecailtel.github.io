@@ -8,7 +8,7 @@
   <script src="radarchart.js" charset="utf-8"></script>
 
   <style>
-    body {margin: 0; position: fixed; top: 0; right: 0; bottom: 0; left: 0; font-family: Arial}
+    body {margin: 0; position: fixed; top: 0; right: 0; bottom: 0; left: 0; font-family: Arial;}
 	p {margin: 0; padding: 0}
 	.choiceZone {display: inline-block; margin: 2px;}
 	.hidden {display: none;}
@@ -25,7 +25,7 @@
 			<p><strong style="text-align: left">Show only the stations that have:</strong></p>
 			<p>
 				<label>Wifi<input type="checkbox" name="wifi" value="true"></label>
-				<label style="margin-left: 20px">Football table(s)<input type="checkbox" name="foosball"></label>
+				<label style="margin-left: 20px">Football table<input type="checkbox" name="foosball"></label>
 				<label style="margin-left: 20px">Power station(s)<input type="checkbox" name="powerstation"></label>
 				<label style="margin-left: 20px">Piano(s)<input type="checkbox" name="piano"></label>
 				<label style="margin-left: 20px">Distributor(s) of short stories<input type="checkbox" name="stories"></label>
@@ -38,16 +38,27 @@
 	<div id="secondColumn" style="display: inline-block; float: left; height: 100%; width: 660px; padding-left: 15px;">
 		<div id = "start" style="height: 100%; width: 100%"><p class="titre" style="margin-top: 40%; text-align: center;">Please select 1 or 2 station(s)</p></div>
 		<div id ="stat" style="display: none;"></div>
+		<div id = "barChart" style="display: none;"></div>
 		<div id ="radarChart" style="display: none;"></div>
 	</div>
 	<script>
 	var statSvg = d3.select("#stat").append("svg")
+		.attr("id","statSvg")
 		.attr("width", 700)
 		.attr("height", 400);
 	
 	var statG = statSvg.append("g")
 		.attr("id","statG")
 		.attr("transform","translate(0,30)");
+	
+	var motifSvg = d3.select("#barChart").append("svg")
+		.attr("id","motifSvg")
+		.attr("width", 350)
+		.attr("height",340);
+		
+	var motifG = motifSvg.append("g")
+		.attr("id","histo_motif")
+		.attr("transform","translate(30,50)");
 	
 	var couleur1 = "#41A9E1",
 		couleur2 = "#FF8C00",
@@ -56,8 +67,8 @@
 		h_rect = 36,
 		x_divertissements1 = 220,
 		x_divertissements2= x_divertissements1 + w_rect,
-		y_divertissements = 95,
-		y_acces = 160;
+		y_divertissements = 125,
+		y_acces = 190;
 	
     var width = 650,
 		height = 470;
@@ -127,7 +138,8 @@
 	function showStats() {
 		d3.select("#start").attr("style","display: none;");
 		d3.select("#stat").attr("style","display: block; height: 318px; width: 100%;");
-		d3.select("#radarChart").attr("style","display: block; height: 318px; width: 100%;");
+		d3.select("#barChart").attr("style","display: inline-block; height: 318px; width: 49%;")
+		d3.select("#radarChart").attr("style","display: inline-block; height: 318px; width: 49%;");
 	};
 	
 	function firstStationChange(data, gare1, gare2) {
@@ -334,9 +346,7 @@
 				.attr("style","border: 2px solid " + couleur1 + ";")
 			
 			firstText = firstChoiceZone.append("p").attr("class","choiceZone")
-			firstText.append("span").text("1")
-			firstText.append("sup").text("st")
-			firstText.append("span").text(" selected station: ");
+			firstText.append("p").text("Station selected #1: ")
 			
 			var firstDropdown = firstChoiceZone.append("select")
 				.attr("class","choiceZone")
@@ -377,9 +387,7 @@
 				.attr("style","border: 2px solid " + couleur2 + ";")
 			
 			secondText = secondChoiceZone.append("p").attr("class","choiceZone")
-			secondText.append("span").text("2")
-			secondText.append("sup").text("nd")
-			secondText.append("span").text(" selected station: ");
+			secondText.append("p").text("Station selected #2: ")
 			
 			var secondDropdown = secondChoiceZone.append("select")
 				.attr("class","choiceZone")
@@ -503,18 +511,19 @@
 					showAgain(selection, wifiBox, foosballBox, powerstationBox, pianoBox, storiesBox);
 				});
 				
-			var legendColor = legend.append("g").attr("id","colorQuantile").attr("transform","translate(0,"+20*(numberOfIntervalsRadius+2)+")");
+			var legendColor = legend.append("g").attr("id","colorQuantile").attr("transform","translate(0,"+20*(numberOfIntervalsRadius+3)+")");
 			
-			var colorText = legendColor.append("text").attr("style","font-size: 0.8em; font-weight: bold;");
-			colorText.append("tspan").attr("x",0).attr("dy","1em").text("Travellers in 2016");
-			colorText.append("tspan").attr("x",0).attr("dy","1.5em").text("compared to 2015:");
+			var colorText = legendColor.append("text")
+				.attr("style","font-size: 0.8em; font-weight: bold;")
+				.attr("x",0)
+				.text("Fluctuation 2016 / 2015:");
 			
 			var eachPosColor = legendColor.selectAll(".positive")
 				.data(posColorScale.range().reverse())
 				.enter()
 				.append("g")
 				.attr("class","positive")
-				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (50+i*19) +")"; });
+				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+i*19) +")"; });
 			
 			eachPosColor.append("circle")
 				.style("stroke", "black")
@@ -552,7 +561,7 @@
 				.enter()
 				.append("g")
 				.attr("class","negative")
-				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (50+19*numberOfIntervalsPosColor+i*19) +")"; });
+				.attr("transform", function(d,i) {return "translate(" + 15 + "," + (20+19*numberOfIntervalsPosColor+i*19) +")"; });
 			
 			eachNegColor.append("circle")
 				.style("stroke", "black")
